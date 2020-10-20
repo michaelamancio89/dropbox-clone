@@ -10,7 +10,7 @@ class DropBoxController{
 
         this.progressBarEl = this.snackModalEl.querySelector('.mc-progress-bar-fg');
 
-        this.namefileEl = this.snackModalEl.querySelector('.namefile');
+        this.namefileEl = this.snackModalEl.querySelector('.filename');
 
         this.timeleftEl = this.snackModalEl.querySelector('.timeleft');
 
@@ -72,7 +72,7 @@ class DropBoxController{
                     reject(event);
                 };
 
-                ajax.onprogress = event =>{
+                ajax.upload.onprogress = event =>{
 
                     this.uploadProgress(event, file);
                 }
@@ -98,7 +98,7 @@ class DropBoxController{
         let loaded = event.loaded;
         let total = event.total;
 
-        let porcent = parseInt(loaded/total) * 100;
+        let porcent = parseInt((loaded/total) * 100);
 
         let timeleft = ((100 - porcent) * timespent)/ porcent;
 
@@ -106,7 +106,7 @@ class DropBoxController{
 
         this.namefileEl.innerHTML = file.name;
 
-        this.timeleftEl.innerHTML = this.formatTimeToHuman(this.timeleft);
+        this.timeleftEl.innerHTML = this.formatTimeToHuman(timeleft);
 
         console.log(timespent, timeleft,porcent);
 
