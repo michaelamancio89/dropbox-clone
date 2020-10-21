@@ -136,7 +136,7 @@ class DropBoxController{
 
                 let formData = new FormData();
 
-                formData.append('input-file',files);
+                formData.append('input-file',file);
 
                 this.startUploadTime = Date.now();
 
