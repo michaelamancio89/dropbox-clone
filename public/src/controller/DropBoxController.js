@@ -2,7 +2,11 @@ class DropBoxController{
 
     constructor(){
 
+        this.currentFolder = ['hcode'];
+
         this.onselectionchange = new Event('selectionchange');
+
+        this.navEl = document.querySelector('#browse-location');
 
         this.btnSendFileEl = document.querySelector('#btn-send-file');
 
@@ -28,7 +32,8 @@ class DropBoxController{
 
         this.initEvents();
 
-        this.readFiles();
+        this.openFolder();
+
     }
 
     connectFirebase(){
@@ -80,6 +85,22 @@ class DropBoxController{
     }
 
     initEvents(){
+
+        this.btnNewFolder.addEventListener('click', e=>{
+
+            let name = prompt('Nome da nova pasta: ');
+
+            if (name) {
+
+                this.getFirebaseRef().push().set({
+
+                    name,
+                    type:'folder',
+                    path:this.currentFolder.join('/')
+
+                });
+            }
+        });
 
         this.btnDelete.addEventListener('click', e=>{
 
@@ -185,9 +206,11 @@ class DropBoxController{
 
     }
 
-    getFirebaseRef(){
+    getFirebaseRef(path){
 
-        return firebase.database().ref('files'); 
+        if (!path) path = this.currentFolder.join('/');
+
+        return firebase.database().ref(path); 
     }
 
     modalShow(show = true){
@@ -485,7 +508,90 @@ class DropBoxController{
         return li;
     }
 
+    renderNav(){
+
+        let nav = document.createElement('nav');
+
+        let path = [];
+
+        for (let i = 0; i < this.currentFolder.length; i++) {
+
+            let folderName = this.currentFolder[i];
+
+            let span = document.createElement('span');
+
+            path.push(folderName);
+
+            if ((i + 1) === this.currentFolder.length) {
+
+                span.innerHTML = folderName;
+
+            }else{
+
+                span.className = 'breadcrumb-segment__wrapper';
+                span.innerHTML = `<span class="ue-effect-container uee-BreadCrumbSegment-link-0">
+                                        <a href="#" data-path="${path.join('/')}" class="breadcrumb-segment">${folderName}</a>
+                                        </span>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" class="mc-icon-template-stateless" style="top: 4px;     position: relative;">
+                                            <title>arrow-right</title>
+                                            <path d="M10.414 7.05l4.95 4.95-4.95 4.95L9 15.534 12.536 12 9 8.464z" fill="#637282"
+                                                fill-rule="evenodd"></path>
+                                    </svg>`;
+
+                
+            }
+
+            nav.appendChild(span);
+        }
+
+        this.navEl.innerHTML = nav.innerHTML;
+
+        this.navEl.querySelectorAll('a').forEach( a =>{
+
+            a.addEventListener('click', e =>{
+
+                e.preventDefault();
+
+                this.currentFolder = a.dataset.path.split('/');
+
+                this.openFolder();
+                
+
+            });
+
+        });
+    }
+
+    openFolder(){
+
+        if (this.lastFolder) this.getFirebaseRef(this.lastFolder).off('value');
+
+        this.renderNav();
+        
+        this.readFiles();
+
+    }
+
     initEventsLi(li){
+
+        li.addEventListener('dblclick', e=>{
+
+            let file = JSON.parse(li.dataset.file);
+
+            switch (file.type) {
+
+                case 'folder':
+                    this.currentFolder.push(file.name);
+                    this.openFolder();
+                    break;
+
+                default:
+                    window.open('/file?path=' + file.path);
+                break;
+
+            }
+
+        });
         
         li.addEventListener('click', e =>{
 
@@ -541,6 +647,8 @@ class DropBoxController{
 
     readFiles(){
 
+        this.lastFolder = this.currentFolder.join('/');
+
         this.getFirebaseRef().on('value', snapshot => {
 
             this.listFilesEl.innerHTML = '';
@@ -550,7 +658,12 @@ class DropBoxController{
                 let key = snapshotItem.key;
                 let data = snapshotItem.val();
 
-                this.listFilesEl.appendChild(this.getFileView(data, key));
+                if (data.type) {
+
+                    this.listFilesEl.appendChild(this.getFileView(data, key));
+
+                }
+
 
             });
 
